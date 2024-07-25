@@ -1,0 +1,9 @@
+CompileFlags:
+  Add: [
+        -Iexternal/workflow/src/include,
+        -Iexternal/workflow/_include,
+        -Iinclude,
+        -Iexternal/sqlite_orm/include,
+        -Iexternal/sqlite3,
+        -Iexternal/rapidjson/include,
+      ]
