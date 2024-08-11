@@ -1,11 +1,16 @@
 #include <gtest/gtest.h>
+#include <iostream>
+#include <ostream>
 #include <sodium.h>
 #include <cstring>
+#include <string>
+#include "util/SecretUtil.h"
+#include "util/StringUtil.h"
 
 // 对称加密测试
 TEST(LibSodiumTest, SymmetricEncryptionDecryption) {
     // 初始化libsodium
-    ASSERT_EQ(sodium_init(), 0);
+    ASSERT_NE(sodium_init(), -1);
 
     // 原始消息
     const char *message = "Hello, World!";
@@ -29,4 +34,35 @@ TEST(LibSodiumTest, SymmetricEncryptionDecryption) {
 
     // 验证解密后的消息与原始消息相同
     ASSERT_EQ(memcmp(message, decrypted, message_len), 0);
+}
+
+
+TEST(LibSodiumTest, AESSymmetricEncryptionDecryption) {
+    // Initialize sodium library
+    ASSERT_NE(sodium_init(), -1);
+
+    // Test data
+    std::vector<unsigned char> plaintext = {'H', 'e', 'l', 'l', 'o', ' ', 'W', 'o', 'r', 'l', 'd'};
+    std::vector<unsigned char> key(crypto_aead_aes256gcm_KEYBYTES);
+    std::vector<unsigned char> nonce(crypto_aead_aes256gcm_NPUBBYTES);
+
+    // Generate random key and nonce
+    randombytes_buf(key.data(), key.size());
+    randombytes_buf(nonce.data(), nonce.size());
+
+    // Encrypt
+    std::vector<unsigned char> ciphertext = aesEncrypt(plaintext, key, nonce);
+
+    // Decrypt
+    std::vector<unsigned char> decryptedtext = aesDecrypt(ciphertext, key, nonce);
+
+    std::string ori = vectorToString(plaintext);
+    std::string hex = vectorToHex(ciphertext);
+    std::string decode = vectorToString(decryptedtext);
+    std::cout << "ori:" << ori << std::endl;
+    std::cout << "hex:" << hex << std::endl;
+    std::cout << "decode:" << decode << std::endl;
+    // Verify
+    ASSERT_EQ(plaintext, decryptedtext);
+
 }

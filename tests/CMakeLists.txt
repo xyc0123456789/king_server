@@ -20,12 +20,18 @@ message(STATUS "LIBSODIUM_LIBRARY: ${LIBSODIUM_LIBRARY}")
 add_library(Libsodium STATIC IMPORTED)
 set_target_properties(Libsodium PROPERTIES IMPORTED_LOCATION ${LIBSODIUM_LIBRARY})
 
+
+set(LIBBOTAN_INSTALL_DIR "${CMAKE_BINARY_DIR}/botan-install")
+include_directories(${LIBBOTAN_INSTALL_DIR}/include/botan-3)
+link_directories(${LIBBOTAN_INSTALL_DIR}/lib)
+
+
 # 添加可执行文件
 add_executable(${TEST_TARGET_NAME} ${TEST_SOURCES})
 target_include_directories(${TEST_TARGET_NAME} PRIVATE ${WORKFLOW_INCLUDE_DIR})
 
 # 链接GoogleTest库和项目库
-target_link_libraries(${TEST_TARGET_NAME} gtest gtest_main glog Libsodium)
+target_link_libraries(${TEST_TARGET_NAME} gtest gtest_main glog Libsodium botan-3)
 
 # 启用测试
 enable_testing()

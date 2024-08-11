@@ -13,3 +13,7 @@
 [submodule "external/gtest"]
 	path = external/gtest
 	url = https://github.com/google/googletest.git
+
+[submodule "external/botan"]
+	path = external/botan
+	url = https://github.com/randombit/botan.git

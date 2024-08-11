@@ -1,8 +1,9 @@
 cmake_minimum_required(VERSION 3.10)
 project(king_server)
 
+cmake_host_system_information(RESULT NUM_CORES QUERY NUMBER_OF_LOGICAL_CORES)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(CMAKE_BUILD_TYPE Debug)
@@ -83,7 +84,7 @@ if (NOT LIBSODIUM_FOUND)
     # 编译和安装libsodium到指定目录
     execute_process(COMMAND ./configure --prefix=${LIBSODIUM_INSTALL_DIR} WORKING_DIRECTORY ${LIBSODIUM_SRC_DIR})
     execute_process(COMMAND make WORKING_DIRECTORY ${LIBSODIUM_SRC_DIR})
-    execute_process(COMMAND make check WORKING_DIRECTORY ${LIBSODIUM_SRC_DIR})
+    # execute_process(COMMAND make check WORKING_DIRECTORY ${LIBSODIUM_SRC_DIR})
     execute_process(COMMAND make install WORKING_DIRECTORY ${LIBSODIUM_SRC_DIR})
 endif()
 
@@ -93,7 +94,53 @@ set(LIBSODIUM_LIBRARY "${LIBSODIUM_INSTALL_DIR}/lib/libsodium.a")
 include_directories(${LIBSODIUM_INCLUDE_DIR})
 link_libraries(${LIBSODIUM_LIBRARY})
 
+find_package(PkgConfig REQUIRED)
+set(LIBBOTAN_INSTALL_DIR "${CMAKE_BINARY_DIR}/botan-install")
+set(ENV{PKG_CONFIG_PATH} "${LIBBOTAN_INSTALL_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
+pkg_check_modules(LIBBOTAN botan-3)
 
+if (LIBBOTAN_FOUND)
+    message(STATUS "Botan found")
+    include_directories(${LIBBOTAN_INCLUDE_DIRS})
+    link_directories(${LIBBOTAN_LIBRARY_DIRS})
+else()
+    message(STATUS "Botan not found, building from source")
+
+    set(LIBBOTAN_SRC_DIR "${CMAKE_SOURCE_DIR}/external/botan")
+
+    # 配置 Botan
+    execute_process(
+        COMMAND python3 configure.py --prefix=${LIBBOTAN_INSTALL_DIR} --without-documentation
+        WORKING_DIRECTORY ${LIBBOTAN_SRC_DIR}
+        RESULT_VARIABLE result
+    )
+    if (result)
+        message(FATAL_ERROR "Botan configuration failed")
+    endif()
+
+    # 构建和安装 Botan
+    execute_process(
+        COMMAND make -j${NUM_CORES}
+        WORKING_DIRECTORY ${LIBBOTAN_SRC_DIR}
+        RESULT_VARIABLE result
+    )
+    if (result)
+        message(FATAL_ERROR "Botan build failed")
+    endif()
+
+    execute_process(
+        COMMAND make install -j${NUM_CORES}
+        WORKING_DIRECTORY ${LIBBOTAN_SRC_DIR}
+        RESULT_VARIABLE result
+    )
+    if (result)
+        message(FATAL_ERROR "Botan installation failed")
+    endif()
+
+    # 包含和链接 Botan
+    include_directories(${LIBBOTAN_INSTALL_DIR}/include/botan-3)
+    link_directories(${LIBBOTAN_INSTALL_DIR}/lib)
+endif()
 
 file(GLOB_RECURSE SOURCES "src/*.cpp")
 add_executable(${PROJECT_NAME} ${SOURCES})

@@ -6,4 +6,5 @@ CompileFlags:
         -Iexternal/sqlite_orm/include,
         -Iexternal/sqlite3,
         -Iexternal/rapidjson/include,
+        -Ibuild/libsodium-install/include
       ]
